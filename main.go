@@ -10,6 +10,7 @@ import (
 
 func createServer() {
 	http.Handle("/user/create", http.HandlerFunc(user.Create))
+	http.Handle("/user/login", http.HandlerFunc(user.Login))
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

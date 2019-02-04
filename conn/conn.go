@@ -12,7 +12,7 @@ var DB *sql.DB
 //InitDB initializes the database connection
 func InitDB() {
 	var err error
-	DB, err = sql.Open("postgres", fmt.Sprintf("host=localhost port=%d user=postgres password=postgres dbname=calendar sslmode=disable", 5432))
+	DB, err = sql.Open("postgres", fmt.Sprintf("host=localhost port=%d user=postgres password=postgres dbname=postgres sslmode=disable", 5432))
 	if err != nil {
 		log.Fatalf("Error connecting to DB: %s", err)
 	}
