@@ -127,6 +127,8 @@ func Login(rw http.ResponseWriter, r *http.Request) {
 
 	fmt.Println(tokenStr)
 
+	// Should return token so it can be added to local storage
+
 	log.Printf("User %s logged in\n", username)
 	rw.WriteHeader(http.StatusOK)
 	rw.Write([]byte("Success"))
