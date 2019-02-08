@@ -5,12 +5,19 @@ import (
 	"net/http"
 
 	"github.com/mattvella07/calendar-server/conn"
+	mw "github.com/mattvella07/calendar-server/middleware"
 	"github.com/mattvella07/calendar-server/user"
 )
 
 func createServer() {
-	http.Handle("/user/create", http.HandlerFunc(user.Create))
-	http.Handle("/user/login", http.HandlerFunc(user.Login))
+	m := mw.Method{}
+
+	m.Allowed = []string{"GET"}
+	http.Handle("/user/list", m.MethodChecker(mw.ValidateJWT(http.HandlerFunc(user.List))))
+
+	m.Allowed = []string{"POST"}
+	http.Handle("/user/create", m.MethodChecker(http.HandlerFunc(user.Create)))
+	http.Handle("/user/login", m.MethodChecker(http.HandlerFunc(user.Login)))
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

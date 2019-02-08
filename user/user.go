@@ -7,7 +7,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
+	jwt "github.com/dgrijalva/jwt-go"
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 
@@ -115,7 +117,46 @@ func Login(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	token := jwt.New(jwt.SigningMethodHS256)
+	signingKey := os.Getenv("SIGNING_KEY")
+	claims := token.Claims.(jwt.MapClaims)
+
+	claims["name"] = "MV"
+
+	tokenStr, _ := token.SignedString([]byte(signingKey))
+
+	fmt.Println(tokenStr)
+
 	log.Printf("User %s logged in\n", username)
 	rw.WriteHeader(http.StatusOK)
 	rw.Write([]byte("Success"))
+}
+
+// List will list all users
+func List(rw http.ResponseWriter, r *http.Request) {
+	rows, err := conn.DB.Query(`SELECT username, password, first_name, last_name FROM users`)
+	if err != nil {
+		log.Printf("DB error: %s\n", err)
+		rw.WriteHeader(http.StatusBadRequest)
+		rw.Write([]byte("Unable to communicate with database"))
+		return
+	}
+	defer rows.Close()
+
+	allUsers := []User{}
+	for rows.Next() {
+		u := User{}
+		err = rows.Scan(&u.Username, &u.Password, &u.FirstName, &u.LastName)
+		if err != nil {
+			log.Printf("DB error: %s\n", err)
+			rw.WriteHeader(http.StatusBadRequest)
+			rw.Write([]byte("Error reading from database"))
+			return
+		}
+		allUsers = append(allUsers, u)
+	}
+
+	rw.WriteHeader(http.StatusOK)
+	rw.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(rw).Encode(allUsers)
 }
