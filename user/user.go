@@ -18,6 +18,7 @@ import (
 
 // User contains info about the user
 type User struct {
+	UserID    int    `josn:"id"`
 	Username  string `json:"username"`
 	Password  string `json:"password"`
 	FirstName string `json:"firstName"`
@@ -51,8 +52,8 @@ func Create(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	existingUser := ""
-	err = conn.DB.QueryRow(`SELECT username FROM users WHERE username = $1`, username).Scan(&existingUser)
+	currUserName := ""
+	err = conn.DB.QueryRow(`SELECT username FROM users WHERE username = $1`, username).Scan(&currUserName)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -65,7 +66,8 @@ func Create(rw http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		_, err = conn.DB.Exec(`INSERT INTO users (username, password, "first_name", "last_name") VALUES ($1, $2, $3, $4)`, username, passwordHash, u.FirstName, u.LastName)
+		userID := -1
+		err = conn.DB.QueryRow(`INSERT INTO users (username, password, "first_name", "last_name") VALUES ($1, $2, $3, $4) RETURNING id`, username, passwordHash, u.FirstName, u.LastName).Scan(&userID)
 		if err != nil {
 			log.Printf("Error creating user: %s\n", err)
 			rw.WriteHeader(http.StatusInternalServerError)
@@ -73,9 +75,11 @@ func Create(rw http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		token := generateToken(userID, username)
+
 		log.Printf("User %s created", username)
 		rw.WriteHeader(http.StatusOK)
-		rw.Write([]byte(fmt.Sprintf("User %s created", username)))
+		rw.Write([]byte(token))
 	case err != nil:
 		// Other error
 		log.Printf("Error: %s\n", err)
@@ -100,7 +104,7 @@ func Login(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	existingUser := User{}
-	err := conn.DB.QueryRow(`SELECT username, password FROM users WHERE username = $1 LIMIT 1`, username).Scan(&existingUser.Username, &existingUser.Password)
+	err := conn.DB.QueryRow(`SELECT id, username, password FROM users WHERE username = $1 LIMIT 1`, username).Scan(&existingUser.UserID, &existingUser.Username, &existingUser.Password)
 	if err != nil {
 		log.Printf("DB error: %s\n", err)
 		rw.WriteHeader(http.StatusUnauthorized)
@@ -117,21 +121,11 @@ func Login(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token := jwt.New(jwt.SigningMethodHS256)
-	signingKey := os.Getenv("SIGNING_KEY")
-	claims := token.Claims.(jwt.MapClaims)
-
-	claims["name"] = "MV"
-
-	tokenStr, _ := token.SignedString([]byte(signingKey))
-
-	fmt.Println(tokenStr)
-
-	// Should return token so it can be added to local storage
+	token := generateToken(existingUser.UserID, existingUser.Username)
 
 	log.Printf("User %s logged in\n", username)
 	rw.WriteHeader(http.StatusOK)
-	rw.Write([]byte("Success"))
+	rw.Write([]byte(token))
 }
 
 // List will list all users
@@ -161,4 +155,17 @@ func List(rw http.ResponseWriter, r *http.Request) {
 	rw.WriteHeader(http.StatusOK)
 	rw.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(rw).Encode(allUsers)
+}
+
+func generateToken(userID int, userName string) string {
+	token := jwt.New(jwt.SigningMethodHS256)
+	signingKey := os.Getenv("SIGNING_KEY")
+	claims := token.Claims.(jwt.MapClaims)
+
+	claims["userid"] = userID
+	claims["username"] = userName
+
+	tokenStr, _ := token.SignedString([]byte(signingKey))
+
+	return tokenStr
 }

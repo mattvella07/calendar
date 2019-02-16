@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/mattvella07/calendar-server/conn"
+	"github.com/mattvella07/calendar-server/events"
 	mw "github.com/mattvella07/calendar-server/middleware"
 	"github.com/mattvella07/calendar-server/user"
 )
@@ -14,10 +15,11 @@ func createServer() {
 
 	m.Allowed = []string{"GET"}
 	http.Handle("/user/list", m.MethodChecker(mw.ValidateJWT(http.HandlerFunc(user.List))))
+	http.Handle("/api/getEvents", m.MethodChecker(mw.ValidateJWT(http.HandlerFunc(events.Get))))
 
 	m.Allowed = []string{"POST"}
-	http.Handle("/user/create", m.MethodChecker(http.HandlerFunc(user.Create)))
-	http.Handle("/user/login", m.MethodChecker(http.HandlerFunc(user.Login)))
+	http.Handle("/api/signup", m.MethodChecker(http.HandlerFunc(user.Create)))
+	http.Handle("/api/login", m.MethodChecker(http.HandlerFunc(user.Login)))
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

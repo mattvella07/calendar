@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 
 	jwt "github.com/dgrijalva/jwt-go"
 )
@@ -46,7 +47,11 @@ func ValidateJWT(next http.Handler) http.Handler {
 			return
 		}
 
-		log.Println("Valid token!")
+		// Set headers so endpoints can access JWT claims
+		r.Header.Set("userid", strconv.Itoa(int(token.Claims.(jwt.MapClaims)["userid"].(float64))))
+		r.Header.Set("username", token.Claims.(jwt.MapClaims)["username"].(string))
+
+		log.Println("Valid token")
 		next.ServeHTTP(rw, r)
 	})
 }
