@@ -25,8 +25,23 @@ func Get(rw http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("userid")
 
 	// Need to filter by a date range (will get from Params)
+	startDate := r.Header.Get("startDate")
+	endDate := r.Header.Get("endDate")
 
-	rows, err := conn.DB.Query(`SELECT * FROM events WHERE owner_id = $1`, userID)
+	// time.Parse() -- check if startDate and endDate are valid times
+	if startDate == "" || endDate == "" {
+		log.Printf("Invalid params, startDate or endDate is missing:\n")
+		rw.WriteHeader(http.StatusBadRequest)
+		rw.Write([]byte("Missing startDate or endDate"))
+		return
+	}
+
+	query := `SELECT * FROM events
+		WHERE owner_id = $1 AND
+		(start_time BETWEEN $2 AND $3 OR
+		end_time BETWEEN $2 AND $3)`
+
+	rows, err := conn.DB.Query(query, userID, startDate, endDate)
 	if err != nil {
 		log.Printf("DB error: %s\n", err)
 		rw.WriteHeader(http.StatusBadRequest)
