@@ -13,7 +13,7 @@ import (
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/mattvella07/calendar-server/conn"
+	"github.com/mattvella07/calendar-server/api/conn"
 )
 
 // User contains info about the user

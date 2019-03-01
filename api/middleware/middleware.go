@@ -34,11 +34,16 @@ func (m Method) MethodChecker(next http.Handler) http.Handler {
 // ValidateJWT validates the JSON Web Token
 func ValidateJWT(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		fmt.Println("jwt: ", r.Header.Get("jwt"))
+		fmt.Println(r.Header.Get("Authorization"))
+
 		token, _ := jwt.Parse(r.Header.Get("jwt"), func(token *jwt.Token) (interface{}, error) {
 			signingKey := os.Getenv("SIGNING_KEY")
 
 			return []byte(signingKey), nil
 		})
+
+		fmt.Println(token)
 
 		if token == nil || !token.Valid {
 			log.Println("Invalid authorization token")
@@ -51,7 +56,6 @@ func ValidateJWT(next http.Handler) http.Handler {
 		r.Header.Set("userid", strconv.Itoa(int(token.Claims.(jwt.MapClaims)["userid"].(float64))))
 		r.Header.Set("username", token.Claims.(jwt.MapClaims)["username"].(string))
 
-		log.Println("Valid token")
 		next.ServeHTTP(rw, r)
 	})
 }
