@@ -131,16 +131,14 @@ export default {
     let jwt = localStorage.getItem("jwt");
     console.log("jwt: " + jwt);
 
-    this.getMonth(0);
-
-    // axios.get("/api/getEvents")
-    //   .then(function(response) {
-    //     console.log("RES: ", response);
-    //     this.getMonth(0);
-    //   })
-    //   .catch(function(err) {
-    //     console.log("ERR: " + err);
-    //   });
+    axios.get("/api/getEvents?startDate=2019-01-01T00:00:00Z&endDate=2019-02-21T11:59:00Z", {headers: {jwt: localStorage.getItem("jwt")}})
+      .then(response => {
+        console.log("RES: ", response.data);
+        this.getMonth(0);
+      })
+      .catch(function(err) {
+        console.log("ERR: " + err);
+      });
   }
 };
 </script>

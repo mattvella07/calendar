@@ -25,8 +25,8 @@ type Event struct {
 // GetByDateRange returns all events for a specific user and date range
 func GetByDateRange(rw http.ResponseWriter, r *http.Request) {
 	userID := r.Header.Get("userid")
-	startDate := r.Header.Get("startDate")
-	endDate := r.Header.Get("endDate")
+	startDate := r.URL.Query().Get("startDate")
+	endDate := r.URL.Query().Get("endDate")
 
 	// Validate startDate and endDate
 	if startDate == "" || endDate == "" {
