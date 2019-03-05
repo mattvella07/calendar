@@ -24,7 +24,7 @@
       </tr>
       <tr v-for="(week, weekKey) in weeks" v-bind:key="weekKey">
         <td v-for="(day, dayKey) in week" v-bind:key="dayKey">
-          <span v-if="day">{{ day }}</span>
+          <span v-if="day" v-bind:class="{ hasEvent: day.hasEvent }">{{ day.day }}</span>
         </td>
       </tr>
     </table>
@@ -63,9 +63,10 @@ export default {
       "Saturday",
       "Sunday"
     ],
-    currYear: "",
-    currMonth: "",
-    weeks: [[], [], [], [], [], []]
+    currYear: new Date().getFullYear(),
+    currMonth: new Date().getMonth(),
+    weeks: [],
+    events: []
   }),
   methods: {
     getMonth: function(monthAdd) {
@@ -81,14 +82,11 @@ export default {
           this.currMonth = 11;
           this.currYear--;
         }
-      } else {
-        let d = new Date();
-        this.currMonth = d.getMonth();
-        this.currYear = d.getFullYear();
       }
 
       let firstDayOfMonth =
         new Date(this.currYear, this.currMonth, 1).getDay() - 1;
+
       if (firstDayOfMonth == -1) {
         firstDayOfMonth = 6;
       }
@@ -100,25 +98,48 @@ export default {
       ).getDate();
 
       let day = 1;
+      let arr = [];
+
       for (let x = 0; x < 6; x++) {
+        let arr2 = [];
+
         for (let y = 0; y < 7; y++) {
+          let hasEvent = false;
+
+          this.events.forEach(e => {
+            let startDate = new Date(e.start_time),
+                endDate = new Date(e.end_time)
+              
+            if (startDate.getDate() == day || endDate.getDate() == day) {
+              hasEvent = true;
+              return;
+            }
+          })
+
           if (x == 0) {
             if (y >= firstDayOfMonth) {
-              this.weeks[x][y] = day;
+              arr2.push({day: day, hasEvent: hasEvent})
               day++;
             } else {
-              this.weeks[x][y] = "";
+              arr2.push("")
             }
           } else {
             if (day <= numDaysInMonth) {
-              this.weeks[x][y] = day;
+              arr2.push({day: day, hasEvent: hasEvent})
               day++;
             } else {
-              this.weeks[x][y] = "";
+              arr2.push("")
             }
           }
         }
+
+        // If all items in array are empty string, don't push array
+        if (arr2.join("") != "") {
+          arr.push(arr2)
+        }
       }
+
+      this.weeks = arr;
     },
     nextMonth: function() {
       this.getMonth(1);
@@ -128,12 +149,14 @@ export default {
     }
   },
   created: function() {
-    let jwt = localStorage.getItem("jwt");
-    console.log("jwt: " + jwt);
+    let jwt = localStorage.getItem("jwt"),
+        numDaysInMonth = new Date(this.currYear, this.currMonth + 1, 0).getDate();
 
-    axios.get("/api/getEvents?startDate=2019-01-01T00:00:00Z&endDate=2019-02-21T11:59:00Z", {headers: {jwt: localStorage.getItem("jwt")}})
+    //this.getMonth(0);
+
+    axios.get(`/api/getEvents?startDate=${this.currYear}-0${this.currMonth + 1}-01T00:00:00Z&endDate=${this.currYear}-0${this.currMonth + 1}-${numDaysInMonth}T11:59:00Z`, {headers: {jwt: jwt}})
       .then(response => {
-        console.log("RES: ", response.data);
+        this.events = response.data || [];
         this.getMonth(0);
       })
       .catch(function(err) {
@@ -187,5 +210,11 @@ table {
 }
 th {
   padding: 0px 15px;
+}
+td, th {
+  text-align: center;
+}
+.hasEvent {
+  color: blue;
 }
 </style>
