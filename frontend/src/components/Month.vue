@@ -40,6 +40,7 @@ export default {
     msg: String
   },
   data: () => ({
+    jwt: localStorage.getItem("jwt"),
     months: [
       "January",
       "February",
@@ -69,21 +70,7 @@ export default {
     events: []
   }),
   methods: {
-    getMonth: function(monthAdd) {
-      if (monthAdd == 1) {
-        this.currMonth++;
-        if (this.currMonth == 12) {
-          this.currMonth = 0;
-          this.currYear++;
-        }
-      } else if (monthAdd == -1) {
-        this.currMonth--;
-        if (this.currMonth == -1) {
-          this.currMonth = 11;
-          this.currYear--;
-        }
-      }
-
+    getMonth: function() {
       let firstDayOfMonth =
         new Date(this.currYear, this.currMonth, 1).getDay() - 1;
 
@@ -142,26 +129,43 @@ export default {
       this.weeks = arr;
     },
     nextMonth: function() {
-      this.getMonth(1);
+      this.currMonth++;
+      if (this.currMonth == 12) {
+        this.currMonth = 0;
+        this.currYear++;
+      }
+
+      this.getEvents();
     },
     prevMonth: function() {
-      this.getMonth(-1);
-    }
-  },
-  created: function() {
-    let jwt = localStorage.getItem("jwt"),
-        numDaysInMonth = new Date(this.currYear, this.currMonth + 1, 0).getDate();
+      this.currMonth--;
+      if (this.currMonth == -1) {
+        this.currMonth = 11;
+        this.currYear--;
+      }
 
-    //this.getMonth(0);
+      this.getEvents();
+    },
+    getEvents: function() {
+      let numDaysInMonth = new Date(this.currYear, this.currMonth + 1, 0).getDate(),
+          currMonth = this.currMonth + 1;
 
-    axios.get(`/api/getEvents?startDate=${this.currYear}-0${this.currMonth + 1}-01T00:00:00Z&endDate=${this.currYear}-0${this.currMonth + 1}-${numDaysInMonth}T11:59:00Z`, {headers: {jwt: jwt}})
+      if (currMonth < 10) {
+        currMonth = "0" + currMonth;
+      }
+
+      axios.get(`/api/getEvents?startDate=${this.currYear}-${currMonth}-01T00:00:00Z&endDate=${this.currYear}-${currMonth}-${numDaysInMonth}T11:59:00Z`, {headers: {jwt: this.jwt}})
       .then(response => {
         this.events = response.data || [];
-        this.getMonth(0);
+        this.getMonth();
       })
       .catch(function(err) {
         console.log("ERR: " + err);
       });
+    }
+  },
+  created: function() {
+    this.getEvents();
   }
 };
 </script>

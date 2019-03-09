@@ -96,6 +96,8 @@ func Create(rw http.ResponseWriter, r *http.Request) {
 // Login validates the username and password and logs the user in
 func Login(rw http.ResponseWriter, r *http.Request) {
 	username, password, ok := r.BasicAuth()
+	fmt.Println("Username: ", username)
+	fmt.Println("Password: ", password)
 	if !ok {
 		log.Println("Username and/or password missing")
 		rw.WriteHeader(http.StatusBadRequest)
