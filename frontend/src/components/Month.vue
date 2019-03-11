@@ -159,7 +159,7 @@ export default {
         this.events = response.data || [];
         this.getMonth();
       })
-      .catch(function(err) {
+      .catch(err => {
         console.log("ERR: " + err);
       });
     }

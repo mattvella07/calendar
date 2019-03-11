@@ -25,6 +25,14 @@ type User struct {
 	LastName  string `json:"lastName"`
 }
 
+// IsValid checks if the user is a valid user
+func IsValid(rw http.ResponseWriter, r *http.Request) {
+	// If ValidateJWT middleware passed then the user is valid
+	log.Println("Valid user")
+	rw.WriteHeader(http.StatusOK)
+	rw.Write([]byte("Valid user"))
+}
+
 // Create creates a new user
 func Create(rw http.ResponseWriter, r *http.Request) {
 	username, password, ok := r.BasicAuth()
@@ -128,35 +136,6 @@ func Login(rw http.ResponseWriter, r *http.Request) {
 	log.Printf("User %s logged in\n", username)
 	rw.WriteHeader(http.StatusOK)
 	rw.Write([]byte(token))
-}
-
-// List will list all users
-func List(rw http.ResponseWriter, r *http.Request) {
-	rows, err := conn.DB.Query(`SELECT username, password, first_name, last_name FROM users`)
-	if err != nil {
-		log.Printf("DB error: %s\n", err)
-		rw.WriteHeader(http.StatusBadRequest)
-		rw.Write([]byte("Unable to communicate with database"))
-		return
-	}
-	defer rows.Close()
-
-	allUsers := []User{}
-	for rows.Next() {
-		u := User{}
-		err = rows.Scan(&u.Username, &u.Password, &u.FirstName, &u.LastName)
-		if err != nil {
-			log.Printf("DB error: %s\n", err)
-			rw.WriteHeader(http.StatusBadRequest)
-			rw.Write([]byte("Error reading from database"))
-			return
-		}
-		allUsers = append(allUsers, u)
-	}
-
-	rw.WriteHeader(http.StatusOK)
-	rw.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(rw).Encode(allUsers)
 }
 
 func generateToken(userID int, userName string) string {

@@ -17,22 +17,33 @@
               <a href="#">Year</a>
             </li>
           </ul>
+          <ul class="right hide-on-med-and-down">
+            <li v-on:click="logout">
+              <a href="#">Logout</a>
+            </li>
+          </ul>
         </div>
       </nav>
       <component v-bind:is="currView"></component>
     </div>
     <div v-else>
-      <Login/>
+      <div v-if="!showSignup">
+        <Login/>
+        <a href="#" v-on:click="signup">New user? Sign up</a>
+      </div>
+      <Signup v-else/>
     </div>
   </div>
 </template>
 
 <script>
+import axios from 'axios';
 import Day from "./components/Day.vue";
 import Week from "./components/Week.vue";
 import Month from "./components/Month.vue";
 import Year from "./components/Year.vue";
 import Login from "./components/Login.vue";
+import Signup from "./components/Signup.vue";
 
 export default {
   name: "app",
@@ -41,15 +52,38 @@ export default {
     Week,
     Month,
     Year,
-    Login
+    Login,
+    Signup
   },
   data: () => ({
+    jwt: localStorage.getItem("jwt"),
     currView: "month",
-    loggedIn: false
+    loggedIn: false,
+    showSignup: false
   }),
   methods: {
     setView: function(event) {
       this.currView = event.target.text.toLowerCase();
+    },
+    logout: function(event) {
+      localStorage.removeItem("jwt");
+      location.reload();
+    },
+    signup: function(event) {
+      event.preventDefault();
+
+      this.showSignup = true;
+    }
+  },
+  created: function() {
+    if (this.jwt) {
+      axios.get('/api/isValidUser', {headers: {jwt: this.jwt}})
+      .then(response => {
+        this.loggedIn = true;
+      })
+      .catch(err => {
+        console.log('Invalid user')
+      })
     }
   }
 };

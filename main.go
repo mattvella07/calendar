@@ -14,12 +14,9 @@ func createServer() {
 	m := mw.Method{}
 
 	m.Allowed = []string{"GET"}
-	http.Handle("/user/list", m.MethodChecker(mw.ValidateJWT(http.HandlerFunc(user.List))))
+	http.Handle("/api/isValidUser", m.MethodChecker(mw.ValidateJWT(http.HandlerFunc(user.IsValid))))
 	http.Handle("/api/getEvents", m.MethodChecker(mw.ValidateJWT(http.HandlerFunc(events.GetByDateRange))))
 	http.Handle("/api/getEvent/", m.MethodChecker(mw.ValidateJWT(http.HandlerFunc(events.GetByID))))
-	// http.Handle("/", m.MethodChecker(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-	// 	http.ServeFile(rw, r, "./frontend/dist/index.html")
-	// })))
 
 	http.Handle("/", http.FileServer(http.Dir("./frontend/dist")))
 
