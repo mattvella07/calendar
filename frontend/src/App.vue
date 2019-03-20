@@ -28,16 +28,16 @@
     </div>
     <div v-else>
       <div v-if="!showSignup">
-        <Login/>
+        <Login @user="isValidUser"/>
         <a href="#" v-on:click="signup">New user? Sign up</a>
       </div>
-      <Signup v-else/>
+      <Signup v-else @user="isValidUser"/>
     </div>
   </div>
 </template>
 
 <script>
-import axios from 'axios';
+import axios from "axios";
 import Day from "./components/Day.vue";
 import Week from "./components/Week.vue";
 import Month from "./components/Month.vue";
@@ -56,7 +56,7 @@ export default {
     Signup
   },
   data: () => ({
-    jwt: localStorage.getItem("jwt"),
+    jwt: "",
     currView: "month",
     loggedIn: false,
     showSignup: false
@@ -67,24 +67,31 @@ export default {
     },
     logout: function(event) {
       localStorage.removeItem("jwt");
-      location.reload();
+      this.isValidUser();
     },
     signup: function(event) {
       event.preventDefault();
 
       this.showSignup = true;
+    },
+    isValidUser: function() {
+      this.jwt = localStorage.getItem("jwt");
+      if (this.jwt) {
+        axios
+          .get("/api/isValidUser", { headers: { jwt: this.jwt } })
+          .then(response => {
+            this.loggedIn = true;
+          })
+          .catch(() => {
+            this.loggedIn = false;
+          });
+      } else {
+        this.loggedIn = false;
+      }
     }
   },
   created: function() {
-    if (this.jwt) {
-      axios.get('/api/isValidUser', {headers: {jwt: this.jwt}})
-      .then(response => {
-        this.loggedIn = true;
-      })
-      .catch(err => {
-        console.log('Invalid user')
-      })
-    }
+    this.isValidUser();
   }
 };
 </script>

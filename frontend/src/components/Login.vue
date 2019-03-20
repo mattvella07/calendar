@@ -12,40 +12,61 @@
         v-bind:class="{disabled: submitDisabled}"
         type="submit"
         v-on:click="login"
-      >Log in</button>
+      >Log in
+        <LoadingSpinner v-if="loggingIn"/>
+      </button>
     </form>
   </div>
 </template>
 
 <script>
 import axios from "axios";
+import LoadingSpinner from "./LoadingSpinner.vue";
 
 export default {
   name: "Login",
+  components: {
+    LoadingSpinner
+  },
   data: () => ({
-    username: '',
-    password: '',
+    username: "",
+    password: "",
     submitDisabled: true,
+    loggingIn: false,
     invalidCreds: false
   }),
   methods: {
     login: function(e) {
       e.preventDefault();
 
+      this.submitDisabled = true;
+      this.loggingIn = true;
+
       if (this.username.trim() !== "" && this.password.trim() !== "") {
-        axios.post("/api/login", {}, { auth: { username: this.username.trim(), password: this.password.trim() } })
-        .then(response => {
-          console.log('Success')
-          localStorage.setItem("jwt", response.data)
-          location.reload();
-        })
-        .catch(err => {
-          console.log("ERR: " + err);
-          this.invalidCreds = true;
-        })
+        axios
+          .post(
+            "/api/login",
+            {},
+            {
+              auth: {
+                username: this.username.trim(),
+                password: this.password.trim()
+              }
+            }
+          )
+          .then(response => {
+            localStorage.setItem("jwt", response.data);
+            this.loggingIn = false;
+            this.$emit("user");
+          })
+          .catch(err => {
+            console.log(err);
+            this.loggingIn = false;
+            this.invalidCreds = true;
+          });
       }
     },
-    inputChange: function(e) {
+    inputChange: function() {
       if (this.invalidCreds) {
         this.invalidCreds = false;
       }
@@ -59,35 +80,3 @@ export default {
   }
 };
 </script>
-
-<style scoped>
-form {
-  width: 300px;
-  height: 300px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  margin: auto;
-}
-.errorMsg {
-  color: white;
-  background-color: red;
-  border-radius: 4px;
-  padding: 4px;
-}
-.bounce-enter-active {
-  animation: bounce-in .5s;
-}
-@keyframes bounce-in {
-  0% {
-    transform: scale(0);
-  }
-  50% {
-    transform: scale(1.5);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-</style>

@@ -8,7 +8,7 @@
       >
         <i class="material-icons"><</i>
       </a>
-      <h1>{{ months[currMonth] }} {{ currYear }}</h1>
+      <h4>{{ months[currMonth] }} {{ currYear }}</h4>
       <a
         v-on:click="nextMonth"
         class="btn-floating btn-large waves-effect waves-light blue accent-4"
@@ -95,34 +95,34 @@ export default {
 
           this.events.forEach(e => {
             let startDate = new Date(e.start_time),
-                endDate = new Date(e.end_time)
-              
+              endDate = new Date(e.end_time);
+
             if (startDate.getDate() == day || endDate.getDate() == day) {
               hasEvent = true;
               return;
             }
-          })
+          });
 
           if (x == 0) {
             if (y >= firstDayOfMonth) {
-              arr2.push({day: day, hasEvent: hasEvent})
+              arr2.push({ day: day, hasEvent: hasEvent });
               day++;
             } else {
-              arr2.push("")
+              arr2.push("");
             }
           } else {
             if (day <= numDaysInMonth) {
-              arr2.push({day: day, hasEvent: hasEvent})
+              arr2.push({ day: day, hasEvent: hasEvent });
               day++;
             } else {
-              arr2.push("")
+              arr2.push("");
             }
           }
         }
 
         // If all items in array are empty string, don't push array
         if (arr2.join("") != "") {
-          arr.push(arr2)
+          arr.push(arr2);
         }
       }
 
@@ -147,21 +147,33 @@ export default {
       this.getEvents();
     },
     getEvents: function() {
-      let numDaysInMonth = new Date(this.currYear, this.currMonth + 1, 0).getDate(),
-          currMonth = this.currMonth + 1;
+      let numDaysInMonth = new Date(
+          this.currYear,
+          this.currMonth + 1,
+          0
+        ).getDate(),
+        currMonth = this.currMonth + 1;
 
       if (currMonth < 10) {
         currMonth = "0" + currMonth;
       }
 
-      axios.get(`/api/getEvents?startDate=${this.currYear}-${currMonth}-01T00:00:00Z&endDate=${this.currYear}-${currMonth}-${numDaysInMonth}T11:59:00Z`, {headers: {jwt: this.jwt}})
-      .then(response => {
-        this.events = response.data || [];
-        this.getMonth();
-      })
-      .catch(err => {
-        console.log("ERR: " + err);
-      });
+      axios
+        .get(
+          `/api/getEvents?startDate=${
+            this.currYear
+          }-${currMonth}-01T00:00:00Z&endDate=${
+            this.currYear
+          }-${currMonth}-${numDaysInMonth}T11:59:00Z`,
+          { headers: { jwt: this.jwt } }
+        )
+        .then(response => {
+          this.events = response.data || [];
+          this.getMonth();
+        })
+        .catch(err => {
+          console.log("ERR: " + err);
+        });
     }
   },
   created: function() {
@@ -170,7 +182,6 @@ export default {
 };
 </script>
 
-<!-- Add "scoped" attribute to limit CSS to this component only -->
 <style scoped>
 h3 {
   margin: 40px 0 0;
@@ -186,16 +197,6 @@ li {
 a {
   color: #42b983;
 }
-.title {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-}
-.title > h1 {
-  margin-left: 20px;
-  margin-right: 20px;
-}
 .week {
   height: 125px;
   width: 100%;
@@ -205,18 +206,22 @@ a {
   padding-bottom: 75px;
   border: black solid 1px;
 }
-table {
-  border: black solid 1px;
-  height: 450px;
-  width: 450px;
-  margin-left: auto;
-  margin-right: auto;
-}
 th {
   padding: 0px 15px;
 }
-td, th {
+th {
   text-align: center;
+}
+td {
+  position: relative;
+  height: 125px;
+  width: 200px;
+  border: 1px solid lightgray;
+}
+td span {
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 .hasEvent {
   color: blue;
