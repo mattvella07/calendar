@@ -40,7 +40,6 @@ export default {
     msg: String
   },
   data: () => ({
-    jwt: localStorage.getItem("jwt"),
     months: [
       "January",
       "February",
@@ -164,15 +163,19 @@ export default {
             this.currYear
           }-${currMonth}-01T00:00:00Z&endDate=${
             this.currYear
-          }-${currMonth}-${numDaysInMonth}T11:59:00Z`,
-          { headers: { jwt: this.jwt } }
+          }-${currMonth}-${numDaysInMonth}T11:59:00Z`
         )
         .then(response => {
           this.events = response.data || [];
           this.getMonth();
         })
         .catch(err => {
-          console.log("ERR: " + err);
+          // Unauthorized, send user back to log in page
+          if (err.response.status === 401) {
+            this.$emit("user");
+          }
+
+          this.getMonth();
         });
     }
   },

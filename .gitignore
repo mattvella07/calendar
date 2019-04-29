@@ -2,7 +2,7 @@
 frontend/.DS_Store
 *.exe
 calendar-server
-.env
+*.env
 
 frontend/node_modules
 frontend/dist

@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/mattvella07/calendar-server/api/conn"
 )
 
 // Method contains the allowed http request methods for an endpoint
@@ -31,19 +30,55 @@ func (m Method) MethodChecker(next http.Handler) http.Handler {
 	})
 }
 
-// ValidateJWT validates the JSON Web Token
-func ValidateJWT(next http.Handler) http.Handler {
+// ValidateCookie validates the cookie
+func ValidateCookie(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		fmt.Println("jwt: ", r.Header.Get("jwt"))
-		fmt.Println(r.Header.Get("Authorization"))
+		log.Println("ValidateCookie")
 
+		cookie, err := r.Cookie("session_token")
+		if err != nil {
+			if err == http.ErrNoCookie {
+				log.Println("Cookie not set")
+				rw.WriteHeader(http.StatusUnauthorized)
+				rw.Write([]byte("Not Authorized"))
+				return
+			}
+
+			log.Printf("Error while getting cookie: %s", err)
+			rw.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		sessionToken := cookie.Value
+
+		res, err := conn.Cache.Do("GET", sessionToken)
+		if err != nil {
+			log.Println("Error getting session token from cache")
+			rw.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		if res == nil {
+			log.Println("Session token doesn't exist")
+			rw.WriteHeader(http.StatusUnauthorized)
+			rw.Write([]byte("Not Authorized"))
+			return
+		}
+
+		// Set headers so endpoints know userid
+		r.Header.Set("userid", strconv.Itoa(int(res.([]uint8)[0])))
+		r.Header.Set("sessionToken", sessionToken)
+
+		next.ServeHTTP(rw, r)
+	})
+}
+
+// ValidateJWT validates the JSON Web Token
+/* func ValidateJWT(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		token, _ := jwt.Parse(r.Header.Get("jwt"), func(token *jwt.Token) (interface{}, error) {
 			signingKey := os.Getenv("SIGNING_KEY")
 
 			return []byte(signingKey), nil
 		})
-
-		fmt.Println(token)
 
 		if token == nil || !token.Valid {
 			log.Println("Invalid authorization token")
@@ -58,4 +93,4 @@ func ValidateJWT(next http.Handler) http.Handler {
 
 		next.ServeHTTP(rw, r)
 	})
-}
+} */

@@ -50,7 +50,6 @@ import moment from "moment";
 export default {
   name: "Week",
   data: () => ({
-    jwt: localStorage.getItem("jwt"),
     dow: [
       "Monday",
       "Tuesday",
@@ -183,19 +182,19 @@ export default {
         .get(
           `/api/getEvents?startDate=${this.formatDateForAPI(
             this.startDate
-          )}T00:00:00Z&endDate=${this.formatDateForAPI(
-            this.endDate
-          )}T11:59:00Z`,
-          {
-            headers: { jwt: this.jwt }
-          }
+          )}T00:00:00Z&endDate=${this.formatDateForAPI(this.endDate)}T11:59:00Z`
         )
         .then(response => {
           this.events = response.data || [];
           this.getWeek();
         })
         .catch(err => {
-          console.log("ERR: " + err);
+          // Unauthorized, send user back to log in page
+          if (err.response.status === 401) {
+            this.$emit("user");
+          }
+
+          this.getWeek();
         });
     }
   },

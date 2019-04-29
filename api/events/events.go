@@ -119,3 +119,7 @@ func GetByID(rw http.ResponseWriter, r *http.Request) {
 	rw.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(rw).Encode(e)
 }
+
+// Create
+
+// Delete

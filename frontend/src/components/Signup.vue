@@ -14,7 +14,8 @@
         v-bind:class="{disabled: submitDisabled}"
         type="submit"
         v-on:click="signup"
-      >Sign Up
+      >
+        Sign Up
         <LoadingSpinner v-if="signingUp"/>
       </button>
     </form>
@@ -64,7 +65,6 @@ export default {
             }
           )
           .then(response => {
-            localStorage.setItem("jwt", response.data);
             this.signingUp = false;
             this.$emit("user");
           })

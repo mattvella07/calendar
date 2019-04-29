@@ -24,7 +24,7 @@
           </ul>
         </div>
       </nav>
-      <component v-bind:is="currView"></component>
+      <component @user="isValidUser" v-bind:is="currView"></component>
     </div>
     <div v-else>
       <div v-if="!showSignup">
@@ -66,8 +66,14 @@ export default {
       this.currView = event.target.text.toLowerCase();
     },
     logout: function(event) {
-      localStorage.removeItem("jwt");
-      this.isValidUser();
+      axios
+        .post("/api/logout")
+        .then(response => {
+          this.loggedIn = false;
+        })
+        .catch(err => {
+          console.log(err);
+        });
     },
     signup: function(event) {
       event.preventDefault();
@@ -75,19 +81,14 @@ export default {
       this.showSignup = true;
     },
     isValidUser: function() {
-      this.jwt = localStorage.getItem("jwt");
-      if (this.jwt) {
-        axios
-          .get("/api/isValidUser", { headers: { jwt: this.jwt } })
-          .then(response => {
-            this.loggedIn = true;
-          })
-          .catch(() => {
-            this.loggedIn = false;
-          });
-      } else {
-        this.loggedIn = false;
-      }
+      axios
+        .get("/api/isValidUser")
+        .then(response => {
+          this.loggedIn = true;
+        })
+        .catch(err => {
+          this.loggedIn = false;
+        });
     }
   },
   created: function() {

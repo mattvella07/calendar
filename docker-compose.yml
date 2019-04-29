@@ -1,0 +1,23 @@
+version: '3'
+services:
+  db:
+    image: postgres
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d
+    env_file:
+      - db.env
+    ports:
+      - 3432:5432
+  cache:
+    image: redis
+    ports:
+      - 3379:6379
+  calendar:
+    image: calendar
+    depends_on:
+      - db
+      - cache
+    env_file:
+      - calendar.env
+    ports:
+      - 8080:8080

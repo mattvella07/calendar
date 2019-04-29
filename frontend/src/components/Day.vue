@@ -35,7 +35,6 @@ import moment from "moment";
 export default {
   name: "Day",
   data: () => ({
-    jwt: localStorage.getItem("jwt"),
     timeSlots: [
       "12am",
       "",
@@ -105,9 +104,43 @@ export default {
 
       this.getEvents();
     },
-    formatDateForAPI: function(date) {},
+    formatDateForAPI: function(date) {
+      let d = new Date(date),
+        yr = d.getFullYear(),
+        mo = d.getMonth() + 1,
+        day = d.getDate();
+
+      if (mo < 10) {
+        mo = "0" + mo;
+      }
+
+      if (day < 10) {
+        day = "0" + day;
+      }
+
+      return `${yr}-${mo}-${day}`;
+    },
     getEvents: function() {
-      this.getDay();
+      axios
+        .get(
+          `/api/getEvents?startDate=${this.formatDateForAPI(
+            this.currDate
+          )}T00:00:00Z&endDate=${this.formatDateForAPI(
+            this.currDate
+          )}T11:59:00Z`
+        )
+        .then(response => {
+          this.events = response.data || [];
+          this.getDay();
+        })
+        .catch(err => {
+          // Unauthorized, send user back to log in page
+          if (err.response.status === 401) {
+            this.$emit("user");
+          }
+
+          this.getDay();
+        });
     }
   },
   created: function() {

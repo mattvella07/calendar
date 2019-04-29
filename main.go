@@ -14,15 +14,17 @@ func createServer() {
 	m := mw.Method{}
 
 	m.Allowed = []string{"GET"}
-	http.Handle("/api/isValidUser", m.MethodChecker(mw.ValidateJWT(http.HandlerFunc(user.IsValid))))
-	http.Handle("/api/getEvents", m.MethodChecker(mw.ValidateJWT(http.HandlerFunc(events.GetByDateRange))))
-	http.Handle("/api/getEvent/", m.MethodChecker(mw.ValidateJWT(http.HandlerFunc(events.GetByID))))
+	http.Handle("/api/isValidUser", m.MethodChecker(mw.ValidateCookie(http.HandlerFunc(user.IsValid))))
+	http.Handle("/api/getEvents", m.MethodChecker(mw.ValidateCookie(http.HandlerFunc(events.GetByDateRange))))
+	http.Handle("/api/getEvent/", m.MethodChecker(mw.ValidateCookie(http.HandlerFunc(events.GetByID))))
 
 	http.Handle("/", http.FileServer(http.Dir("./frontend/dist")))
 
 	m.Allowed = []string{"POST"}
 	http.Handle("/api/signup", m.MethodChecker(http.HandlerFunc(user.Create)))
 	http.Handle("/api/login", m.MethodChecker(http.HandlerFunc(user.Login)))
+	http.Handle("/api/logout", m.MethodChecker(http.HandlerFunc(user.Logout)))
+	http.Handle("/api/changePassword", m.MethodChecker(mw.ValidateCookie(http.HandlerFunc(user.ChangePassword))))
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
@@ -30,6 +32,9 @@ func createServer() {
 func main() {
 	conn.InitDB()
 	defer conn.DB.Close()
+
+	conn.InitCache()
+	defer conn.Cache.Close()
 
 	createServer()
 }

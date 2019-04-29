@@ -7,13 +7,14 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
+	"strconv"
+	"strings"
 
-	jwt "github.com/dgrijalva/jwt-go"
 	_ "github.com/lib/pq"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/mattvella07/calendar-server/api/conn"
+	uuid "github.com/satori/go.uuid"
 )
 
 // User contains info about the user
@@ -27,7 +28,7 @@ type User struct {
 
 // IsValid checks if the user is a valid user
 func IsValid(rw http.ResponseWriter, r *http.Request) {
-	// If ValidateJWT middleware passed then the user is valid
+	// If ValidateCookie middleware passed then the user is valid
 	log.Println("Valid user")
 	rw.WriteHeader(http.StatusOK)
 	rw.Write([]byte("Valid user"))
@@ -40,6 +41,20 @@ func Create(rw http.ResponseWriter, r *http.Request) {
 		log.Println("Username and/or password missing")
 		rw.WriteHeader(http.StatusBadRequest)
 		rw.Write([]byte("Username and/or password missing"))
+		return
+	}
+
+	if strings.TrimSpace(username) == "" {
+		log.Println("Empty username")
+		rw.WriteHeader(http.StatusUnauthorized)
+		rw.Write([]byte("Username must not be empty"))
+		return
+	}
+
+	if strings.TrimSpace(password) == "" {
+		log.Println("Empty password")
+		rw.WriteHeader(http.StatusUnauthorized)
+		rw.Write([]byte("Password must not be empty"))
 		return
 	}
 
@@ -74,6 +89,20 @@ func Create(rw http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		if strings.TrimSpace(u.FirstName) == "" {
+			log.Println("Empty first name")
+			rw.WriteHeader(http.StatusUnauthorized)
+			rw.Write([]byte("First name must not be empty"))
+			return
+		}
+
+		if strings.TrimSpace(u.LastName) == "" {
+			log.Println("Empty last name")
+			rw.WriteHeader(http.StatusUnauthorized)
+			rw.Write([]byte("Last name must not be empty"))
+			return
+		}
+
 		userID := -1
 		err = conn.DB.QueryRow(`INSERT INTO users (username, password, "first_name", "last_name") VALUES ($1, $2, $3, $4) RETURNING id`, username, passwordHash, u.FirstName, u.LastName).Scan(&userID)
 		if err != nil {
@@ -83,11 +112,20 @@ func Create(rw http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		token := generateToken(userID, username)
+		// token := generateToken(userID, username)
 
-		log.Printf("User %s created", username)
+		cookie, err := generateCookie(string(userID))
+		if err != nil {
+			log.Printf("Error generating cookie: %s\n", err)
+			rw.WriteHeader(http.StatusInternalServerError)
+			rw.Write([]byte("Error creating user"))
+			return
+		}
+		http.SetCookie(rw, &cookie)
+
+		log.Printf("User %s created\n", username)
 		rw.WriteHeader(http.StatusOK)
-		rw.Write([]byte(token))
+		rw.Write([]byte(fmt.Sprintf("User %s created", username)))
 	case err != nil:
 		// Other error
 		log.Printf("Error: %s\n", err)
@@ -131,14 +169,199 @@ func Login(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token := generateToken(existingUser.UserID, existingUser.Username)
+	// token := generateToken(existingUser.UserID, existingUser.Username)
+
+	cookie, err := generateCookie(string(existingUser.UserID))
+	if err != nil {
+		log.Printf("Error generating cookie: %s\n", err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		rw.Write([]byte("Error logging in"))
+		return
+	}
+	http.SetCookie(rw, &cookie)
 
 	log.Printf("User %s logged in\n", username)
 	rw.WriteHeader(http.StatusOK)
-	rw.Write([]byte(token))
+	rw.Write([]byte("Logged in"))
 }
 
-func generateToken(userID int, userName string) string {
+// Logout logs the user out
+func Logout(rw http.ResponseWriter, r *http.Request) {
+	// Remove current token
+	sessionToken := r.Header.Get("sessionToken")
+
+	log.Printf("Logout sessionToken: %s", sessionToken)
+
+	_, err := conn.Cache.Do("DEL", sessionToken)
+	if err != nil {
+		log.Printf("Error deleting session token from cache: %s\n", err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Send back empty cookie
+	http.SetCookie(rw, &http.Cookie{
+		Name:   "session_token",
+		Value:  "",
+		MaxAge: 0,
+	})
+
+	log.Println("User logged out")
+	rw.WriteHeader(http.StatusOK)
+	rw.Write([]byte("Logged out"))
+}
+
+// ChangePassword changes the user's password
+func ChangePassword(rw http.ResponseWriter, r *http.Request) {
+	userID, err := strconv.Atoi(r.Header.Get("userid"))
+	if err != nil {
+		log.Printf("Invalid User ID: %s\n", err)
+		rw.WriteHeader(http.StatusUnauthorized)
+		rw.Write([]byte("Incorrect Username and/or password"))
+		return
+	}
+	currPassword := r.Header.Get("currentPassword")
+	newPassword := r.Header.Get("newPassword")
+	sessionToken := r.Header.Get("sessionToken")
+
+	// Check if user exists in DB
+	existingUser := User{}
+	err = conn.DB.QueryRow(`SELECT password FROM users WHERE id = $1 LIMIT 1`, userID).Scan(&existingUser.Password)
+	if err != nil {
+		log.Printf("DB error: %s\n", err)
+		rw.WriteHeader(http.StatusUnauthorized)
+		rw.Write([]byte("Incorrect Username and/or password"))
+		return
+	}
+
+	// User exists, valdiate current password
+	err = bcrypt.CompareHashAndPassword([]byte(existingUser.Password), []byte(currPassword))
+	if err != nil {
+		log.Printf("Incorrect password: %s\n", err)
+		rw.WriteHeader(http.StatusUnauthorized)
+		rw.Write([]byte("Incorrect Username and/or password"))
+		return
+	}
+
+	if strings.TrimSpace(newPassword) == "" {
+		log.Println("Empty new password")
+		rw.WriteHeader(http.StatusUnauthorized)
+		rw.Write([]byte("New password must not be empty"))
+		return
+	}
+
+	// Update users table with new password
+	newPasswordHash, err := bcrypt.GenerateFromPassword([]byte(newPassword), 14)
+	if err != nil {
+		log.Printf("Error creating hash of user's new password: %s\n", err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		rw.Write([]byte("Error updating password"))
+		return
+	}
+
+	res, err := conn.DB.Exec(`UPDATE users SET password = $1 WHERE id = $2`, newPasswordHash, userID)
+	if err != nil {
+		log.Printf("Error updating user's password: %s\n", err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		rw.Write([]byte("Error updating password"))
+		return
+	}
+
+	if count, err := res.RowsAffected(); err != nil || count == 0 {
+		log.Printf("Error updating user's password, count: %d, err: %s\n", count, err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		rw.Write([]byte("Error updating password"))
+		return
+	}
+
+	// Remove current token
+	_, err = conn.Cache.Do("DEL", sessionToken)
+	if err != nil {
+		log.Printf("Error deleting session token from cache: %s\n", err)
+	}
+
+	// Delete all tokens for the current user
+	keyData, err := conn.Cache.Do("KEYS", "*")
+	if err != nil {
+		log.Printf("Error getting all keys from cache: %s\n", err)
+	}
+
+	if keyData != nil {
+		for _, k := range keyData.([]interface{}) {
+			key := string([]byte(k.([]uint8)))
+
+			sessUserID, err := conn.Cache.Do("GET", key)
+			if err != nil {
+				log.Printf("Error getting session token %s from cache\n", key)
+				continue
+			}
+			if sessUserID == nil {
+				continue
+			}
+
+			if userID == int(sessUserID.([]uint8)[0]) {
+				_, err = conn.Cache.Do("DEL", key)
+				if err != nil {
+					log.Printf("Error deleting session token %s from cache: %s\n", key, err)
+					continue
+				}
+			}
+		}
+	}
+
+	// Send back new cookie
+	cookie, err := generateCookie(string(userID))
+	if err != nil {
+		log.Printf("Error generating cookie: %s\n", err)
+
+		// If problem generating a new cookie, send back an empty one
+		http.SetCookie(rw, &http.Cookie{
+			Name:   "session_token",
+			Value:  "",
+			MaxAge: 0,
+		})
+
+		rw.WriteHeader(http.StatusOK)
+		rw.Write([]byte("Password updated"))
+		return
+	}
+
+	http.SetCookie(rw, &cookie)
+
+	log.Println("Password updated")
+	rw.WriteHeader(http.StatusOK)
+	rw.Write([]byte("Password updated"))
+}
+
+// Delete deletes the current user
+func Delete(rw http.ResponseWriter, r *http.Request) {
+	// Remove user from users table
+
+	// Remove all events owned by that user
+
+	// Remove all existing tokens for that user
+
+	// Send back empty cookie to log them out
+}
+
+func generateCookie(userID string) (http.Cookie, error) {
+	sessionToken := uuid.NewV4().String()
+
+	_, err := conn.Cache.Do("SETEX", sessionToken, "300", userID)
+	if err != nil {
+		return http.Cookie{}, err
+	}
+
+	cookie := http.Cookie{
+		Name:   "session_token",
+		Value:  sessionToken,
+		MaxAge: 300,
+	}
+
+	return cookie, nil
+}
+
+/* func generateToken(userID int, userName string) string {
 	token := jwt.New(jwt.SigningMethodHS256)
 	signingKey := os.Getenv("SIGNING_KEY")
 	claims := token.Claims.(jwt.MapClaims)
@@ -149,4 +372,4 @@ func generateToken(userID int, userName string) string {
 	tokenStr, _ := token.SignedString([]byte(signingKey))
 
 	return tokenStr
-}
+} */
