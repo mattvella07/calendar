@@ -1,0 +1,6 @@
+FROM golang
+WORKDIR /
+COPY . .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o calendar-server main.go 
+EXPOSE 8080
+CMD ["./calendar-server"]
