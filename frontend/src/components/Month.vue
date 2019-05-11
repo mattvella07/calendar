@@ -1,6 +1,5 @@
 <template>
   <div class="hello">
-    <!-- <h1>{{ msg }}</h1> -->
     <div class="title">
       <a
         v-on:click="prevMonth"
@@ -8,13 +7,15 @@
       >
         <i class="material-icons"><</i>
       </a>
-      <h4>{{ months[currMonth] }} {{ currYear }}</h4>
+      <a v-on:click="goToToday" class="btn waves-effect waves-light blue accent-4">Today</a>
       <a
         v-on:click="nextMonth"
         class="btn-floating btn-large waves-effect waves-light blue accent-4"
       >
         <i class="material-icons">></i>
       </a>
+
+      <h4>{{ currMonthStr }} {{ currYear }}</h4>
     </div>
     <table>
       <tr>
@@ -24,7 +25,7 @@
       </tr>
       <tr v-for="(week, weekKey) in weeks" v-bind:key="weekKey">
         <td v-for="(day, dayKey) in week" v-bind:key="dayKey">
-          <span v-if="day" v-bind:class="{ hasEvent: day.hasEvent }">{{ day.day }}</span>
+          <span v-if="day" v-bind:class="{ hasEvent: day.hasEvent, today: day.today }">{{ day.day }}</span>
         </td>
       </tr>
     </table>
@@ -32,7 +33,16 @@
 </template>
 
 <script>
+import { formatDateForAPI } from "../utils";
 import axios from "axios";
+import {
+  getDay,
+  getMonth,
+  getYear,
+  getDaysInMonth,
+  isToday,
+  format
+} from "date-fns";
 
 export default {
   name: "Month",
@@ -40,20 +50,6 @@ export default {
     msg: String
   },
   data: () => ({
-    months: [
-      "January",
-      "February",
-      "March",
-      "April",
-      "May",
-      "June",
-      "July",
-      "August",
-      "September",
-      "October",
-      "November",
-      "December"
-    ],
     dow: [
       "Monday",
       "Tuesday",
@@ -63,31 +59,29 @@ export default {
       "Saturday",
       "Sunday"
     ],
-    currYear: new Date().getFullYear(),
-    currMonth: new Date().getMonth(),
+    currYear: getYear(new Date()),
+    currMonth: getMonth(new Date()),
+    currMonthStr: format(new Date(), "MMMM"),
     weeks: [],
     events: []
   }),
   methods: {
-    getMonth: function() {
+    createMonth: function() {
       let firstDayOfMonth =
-        new Date(this.currYear, this.currMonth, 1).getDay() - 1;
+        getDay(new Date(this.currYear, this.currMonth, 1)) - 1;
 
       if (firstDayOfMonth == -1) {
         firstDayOfMonth = 6;
       }
 
-      let numDaysInMonth = new Date(
-        this.currYear,
-        this.currMonth + 1,
-        0
-      ).getDate();
-
-      let day = 1;
-      let arr = [];
+      let numDaysInMonth = getDaysInMonth(
+          new Date(this.currYear, this.currMonth)
+        ),
+        day = 1,
+        allWeeks = [];
 
       for (let x = 0; x < 6; x++) {
-        let arr2 = [];
+        let week = [];
 
         for (let y = 0; y < 7; y++) {
           let hasEvent = false;
@@ -104,28 +98,36 @@ export default {
 
           if (x == 0) {
             if (y >= firstDayOfMonth) {
-              arr2.push({ day: day, hasEvent: hasEvent });
+              week.push({
+                day: day,
+                hasEvent: hasEvent,
+                today: isToday(new Date(this.currYear, this.currMonth, day))
+              });
               day++;
             } else {
-              arr2.push("");
+              week.push("");
             }
           } else {
             if (day <= numDaysInMonth) {
-              arr2.push({ day: day, hasEvent: hasEvent });
+              week.push({
+                day: day,
+                hasEvent: hasEvent,
+                today: isToday(new Date(this.currYear, this.currMonth, day))
+              });
               day++;
             } else {
-              arr2.push("");
+              week.push("");
             }
           }
         }
 
         // If all items in array are empty string, don't push array
-        if (arr2.join("") != "") {
-          arr.push(arr2);
+        if (week.join("") != "") {
+          allWeeks.push(week);
         }
       }
 
-      this.weeks = arr;
+      this.weeks = allWeeks;
     },
     nextMonth: function() {
       this.currMonth++;
@@ -146,37 +148,44 @@ export default {
       this.getEvents();
     },
     getEvents: function() {
-      let numDaysInMonth = new Date(
-          this.currYear,
-          this.currMonth + 1,
-          0
-        ).getDate(),
-        currMonth = this.currMonth + 1;
+      this.currMonthStr = format(
+        new Date(this.currYear, this.currMonth, 1),
+        "MMMM"
+      );
 
-      if (currMonth < 10) {
-        currMonth = "0" + currMonth;
-      }
+      let numDaysInMonth = getDaysInMonth(
+        new Date(this.currYear, this.currMonth)
+      );
 
       axios
         .get(
-          `/api/getEvents?startDate=${
-            this.currYear
-          }-${currMonth}-01T00:00:00Z&endDate=${
-            this.currYear
-          }-${currMonth}-${numDaysInMonth}T11:59:00Z`
+          `/api/getEvents?startDate=${formatDateForAPI(
+            format(new Date(this.currYear, this.currMonth, 1), "MMM DD, YYYY")
+          )}T00:00:00Z&endDate=${formatDateForAPI(
+            format(
+              new Date(this.currYear, this.currMonth, numDaysInMonth),
+              "MMM DD, YYYY"
+            )
+          )}T11:59:00Z`
         )
         .then(response => {
           this.events = response.data || [];
-          this.getMonth();
+          this.createMonth();
         })
         .catch(err => {
           // Unauthorized, send user back to log in page
-          if (err.response.status === 401) {
+          if (err && err.response && err.response.status === 401) {
             this.$emit("user");
           }
 
-          this.getMonth();
+          this.createMonth();
         });
+    },
+    goToToday: function() {
+      this.currYear = getYear(new Date());
+      this.currMonth = getMonth(new Date());
+
+      this.getEvents();
     }
   },
   created: function() {
@@ -198,7 +207,14 @@ li {
   margin: 0 10px;
 }
 a {
-  color: #42b983;
+  color: white;
+  margin: 0px 5px;
+}
+.title {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: start;
 }
 .week {
   height: 125px;
@@ -228,5 +244,8 @@ td span {
 }
 .hasEvent {
   color: blue;
+}
+.today {
+  color: red;
 }
 </style>

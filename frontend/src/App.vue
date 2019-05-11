@@ -56,7 +56,6 @@ export default {
     Signup
   },
   data: () => ({
-    jwt: "",
     currView: "month",
     loggedIn: false,
     showSignup: false

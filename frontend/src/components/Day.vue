@@ -4,10 +4,12 @@
       <a v-on:click="prevDay" class="btn-floating btn-large waves-effect waves-light blue accent-4">
         <i class="material-icons"><</i>
       </a>
-      <h4>{{ currDate }}</h4>
+      <a v-on:click="goToToday" class="btn waves-effect waves-light blue accent-4">Today</a>
       <a v-on:click="nextDay" class="btn-floating btn-large waves-effect waves-light blue accent-4">
         <i class="material-icons">></i>
       </a>
+
+      <h4>{{ currDate }}</h4>
     </div>
     <div id="fullCalendar">
       <table id="time">
@@ -29,127 +31,79 @@
 </template>
 
 <script>
+import { formatDateForAPI, createTimeSlots } from "../utils";
 import axios from "axios";
-import moment from "moment";
+import { addDays, subDays, format } from "date-fns";
 
 export default {
   name: "Day",
   data: () => ({
-    timeSlots: [
-      "12am",
-      "",
-      "1am",
-      "",
-      "2am",
-      "",
-      "3am",
-      "",
-      "4am",
-      "",
-      "5am",
-      "",
-      "6am",
-      "",
-      "7am",
-      "",
-      "8am",
-      "",
-      "9am",
-      "",
-      "10am",
-      "",
-      "11am",
-      "",
-      "12pm",
-      "",
-      "1pm",
-      "",
-      "2pm",
-      "",
-      "3pm",
-      "",
-      "4pm",
-      "",
-      "5pm",
-      "",
-      "6pm",
-      "",
-      "7pm",
-      "",
-      "8pm",
-      "",
-      "9pm",
-      "",
-      "10pm",
-      "",
-      "11pm",
-      ""
-    ],
-    currDate: moment().format("dddd, MMMM DD, YYYY"),
+    timeSlots: [],
+    currDate: format(new Date(), "dddd, MMMM DD, YYYY"),
     events: []
   }),
   methods: {
-    getDay: function() {},
+    createDay: function() {},
     nextDay: function() {
-      this.currDate = moment(this.currDate)
-        .add(1, "days")
-        .format("dddd, MMMM DD, YYYY");
+      this.currDate = format(
+        addDays(new Date(this.currDate), 1),
+        "dddd, MMMM DD, YYYY"
+      );
 
       this.getEvents();
     },
     prevDay: function() {
-      this.currDate = moment(this.currDate)
-        .subtract(1, "days")
-        .format("dddd, MMMM DD, YYYY");
+      this.currDate = format(
+        subDays(new Date(this.currDate), 1),
+        "dddd, MMMM DD, YYYY"
+      );
 
       this.getEvents();
-    },
-    formatDateForAPI: function(date) {
-      let d = new Date(date),
-        yr = d.getFullYear(),
-        mo = d.getMonth() + 1,
-        day = d.getDate();
-
-      if (mo < 10) {
-        mo = "0" + mo;
-      }
-
-      if (day < 10) {
-        day = "0" + day;
-      }
-
-      return `${yr}-${mo}-${day}`;
     },
     getEvents: function() {
       axios
         .get(
-          `/api/getEvents?startDate=${this.formatDateForAPI(
+          `/api/getEvents?startDate=${formatDateForAPI(
             this.currDate
-          )}T00:00:00Z&endDate=${this.formatDateForAPI(
-            this.currDate
-          )}T11:59:00Z`
+          )}T00:00:00Z&endDate=${formatDateForAPI(this.currDate)}T11:59:00Z`
         )
         .then(response => {
           this.events = response.data || [];
-          this.getDay();
+          this.createDay();
         })
         .catch(err => {
           // Unauthorized, send user back to log in page
-          if (err.response.status === 401) {
+          if (err && err.response && err.response.status === 401) {
             this.$emit("user");
           }
 
-          this.getDay();
+          this.createDay();
         });
+    },
+    goToToday: function() {
+      this.currDate = format(new Date(), "dddd, MMMM DD, YYYY");
+
+      this.getEvents();
     }
   },
   created: function() {
+    this.timeSlots = createTimeSlots(this.currDate);
     this.getEvents();
   }
 };
 </script>
 
 <style scoped>
+a {
+  color: white;
+  margin: 0px 5px;
+}
+.title {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: start;
+}
 #fullCalendar {
   display: flex;
   flex-direction: row;

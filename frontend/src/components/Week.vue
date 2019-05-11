@@ -7,13 +7,15 @@
       >
         <i class="material-icons"><</i>
       </a>
-      <h4>{{ startDate }} - {{ endDate }}</h4>
+      <a v-on:click="goToToday" class="btn waves-effect waves-light blue accent-4">Today</a>
       <a
         v-on:click="nextWeek"
         class="btn-floating btn-large waves-effect waves-light blue accent-4"
       >
         <i class="material-icons">></i>
       </a>
+
+      <h4>{{ startDate }} - {{ endDate }}</h4>
     </div>
     <div id="fullCalendar">
       <table id="time">
@@ -29,8 +31,8 @@
       <table id="calendar">
         <tr>
           <th v-for="(day, dayKey) in days" v-bind:key="dayKey">
-            <span>{{ day.date }}</span>&nbsp;&nbsp;&nbsp;
-            <span>{{ day.dow }}</span>
+            <span v-bind:class="{ today: day.today }">{{ day.date }}</span>&nbsp;&nbsp;&nbsp;
+            <span v-bind:class="{ today: day.today }">{{ day.dow }}</span>
           </th>
         </tr>
         <tr v-for="(time, timeKey) in timeSlots" v-bind:key="timeKey">
@@ -44,8 +46,20 @@
 </template>
 
 <script>
+import { formatDateForAPI, createTimeSlots } from "../utils";
 import axios from "axios";
-import moment from "moment";
+import {
+  getDate,
+  getMonth,
+  getYear,
+  addHours,
+  addDays,
+  subDays,
+  startOfWeek,
+  endOfWeek,
+  isToday,
+  format
+} from "date-fns";
 
 export default {
   name: "Week",
@@ -59,152 +73,91 @@ export default {
       "Saturday",
       "Sunday"
     ],
-    timeSlots: [
-      "12am",
-      "",
-      "1am",
-      "",
-      "2am",
-      "",
-      "3am",
-      "",
-      "4am",
-      "",
-      "5am",
-      "",
-      "6am",
-      "",
-      "7am",
-      "",
-      "8am",
-      "",
-      "9am",
-      "",
-      "10am",
-      "",
-      "11am",
-      "",
-      "12pm",
-      "",
-      "1pm",
-      "",
-      "2pm",
-      "",
-      "3pm",
-      "",
-      "4pm",
-      "",
-      "5pm",
-      "",
-      "6pm",
-      "",
-      "7pm",
-      "",
-      "8pm",
-      "",
-      "9pm",
-      "",
-      "10pm",
-      "",
-      "11pm",
-      ""
-    ],
+    timeSlots: [],
     startDate: new Date(),
     endDate: new Date(),
     days: [],
     events: []
   }),
   methods: {
-    getWeek: function() {
-      let arr = [],
-        d = new Date(this.startDate);
+    createWeek: function() {
+      let daysInWeek = [];
 
       for (let x = 0; x < 7; x++) {
-        arr.push({
+        daysInWeek.push({
           dow: this.dow[x],
-          date: moment()
-            .set({
-              year: d.getFullYear(),
-              month: d.getMonth(),
-              date: d.getDate()
-            })
-            .add(x, "days")
-            .get("date")
+          date: getDate(addDays(new Date(this.startDate), x)),
+          today: isToday(addDays(new Date(this.startDate), x))
         });
       }
 
-      this.days = arr;
+      this.days = daysInWeek;
     },
     nextWeek: function() {
-      this.startDate = moment(this.startDate).add(7, "days");
+      this.startDate = addDays(new Date(this.startDate), 7);
 
       this.getEvents();
     },
     prevWeek: function() {
-      this.startDate = moment(this.startDate).subtract(7, "days");
+      this.startDate = subDays(new Date(this.startDate), 7);
 
       this.getEvents();
     },
-    formatDateForAPI: function(date) {
-      let d = new Date(date),
-        yr = d.getFullYear(),
-        mo = d.getMonth() + 1,
-        day = d.getDate();
-
-      if (mo < 10) {
-        mo = "0" + mo;
-      }
-
-      if (day < 10) {
-        day = "0" + day;
-      }
-
-      return `${yr}-${mo}-${day}`;
-    },
     getEvents: function() {
-      // Get week start and end date
-      if (new Date(this.startDate).getDay() === 0) {
-        this.startDate = moment(this.startDate)
-          .subtract(6, "days")
-          .format("MMM DD, YYYY");
-      } else {
-        this.startDate = moment(this.startDate)
-          .startOf("week")
-          .add(1, "days")
-          .format("MMM DD, YYYY");
-      }
+      this.startDate = format(
+        startOfWeek(new Date(this.startDate), { weekStartsOn: 1 }),
+        "MMM DD, YYYY"
+      );
 
-      this.endDate = moment(this.startDate)
-        .add(6, "days")
-        .format("MMM DD, YYYY");
+      this.endDate = format(
+        endOfWeek(new Date(this.startDate), { weekStartsOn: 1 }),
+        "MMM DD, YYYY"
+      );
 
       axios
         .get(
-          `/api/getEvents?startDate=${this.formatDateForAPI(
+          `/api/getEvents?startDate=${formatDateForAPI(
             this.startDate
-          )}T00:00:00Z&endDate=${this.formatDateForAPI(this.endDate)}T11:59:00Z`
+          )}T00:00:00Z&endDate=${formatDateForAPI(this.endDate)}T11:59:00Z`
         )
         .then(response => {
           this.events = response.data || [];
-          this.getWeek();
+          this.createWeek();
         })
         .catch(err => {
           // Unauthorized, send user back to log in page
-          if (err.response.status === 401) {
+          if (err && err.response && err.response.status === 401) {
             this.$emit("user");
           }
 
-          this.getWeek();
+          this.createWeek();
         });
+    },
+    goToToday: function() {
+      this.startDate = new Date();
+      this.endDate = new Date();
+
+      this.getEvents();
     }
   },
   created: function() {
+    this.timeSlots = createTimeSlots(this.startDate);
     this.getEvents();
   }
 };
 </script>
 
 <style scoped>
+a {
+  color: white;
+  margin: 0px 5px;
+}
+.title {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: start;
+}
 #fullCalendar {
   display: flex;
   flex-direction: row;
@@ -234,5 +187,8 @@ td {
   position: absolute;
   top: 0;
   right: 0;
+}
+.today {
+  color: red;
 }
 </style>

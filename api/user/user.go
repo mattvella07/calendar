@@ -281,33 +281,7 @@ func ChangePassword(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	// Delete all tokens for the current user
-	keyData, err := conn.Cache.Do("KEYS", "*")
-	if err != nil {
-		log.Printf("Error getting all keys from cache: %s\n", err)
-	}
-
-	if keyData != nil {
-		for _, k := range keyData.([]interface{}) {
-			key := string([]byte(k.([]uint8)))
-
-			sessUserID, err := conn.Cache.Do("GET", key)
-			if err != nil {
-				log.Printf("Error getting session token %s from cache\n", key)
-				continue
-			}
-			if sessUserID == nil {
-				continue
-			}
-
-			if userID == int(sessUserID.([]uint8)[0]) {
-				_, err = conn.Cache.Do("DEL", key)
-				if err != nil {
-					log.Printf("Error deleting session token %s from cache: %s\n", key, err)
-					continue
-				}
-			}
-		}
-	}
+	deleteAllTokensForUser(userID)
 
 	// Send back new cookie
 	cookie, err := generateCookie(string(userID))
@@ -335,19 +309,62 @@ func ChangePassword(rw http.ResponseWriter, r *http.Request) {
 
 // Delete deletes the current user
 func Delete(rw http.ResponseWriter, r *http.Request) {
+	userID, err := strconv.Atoi(r.Header.Get("userid"))
+	if err != nil {
+		log.Printf("Invalid User ID: %s\n", err)
+		rw.WriteHeader(http.StatusUnauthorized)
+		rw.Write([]byte("Incorrect Username and/or password"))
+		return
+	}
+	sessionToken := r.Header.Get("sessionToken")
+
 	// Remove user from users table
+	res, err := conn.DB.Exec(`DELETE FROM users WHERE id = $1`, userID)
+	if err != nil {
+		log.Printf("Error deleting user: %s\n", err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		rw.Write([]byte("Error deleting user"))
+		return
+	}
+
+	if count, err := res.RowsAffected(); err != nil || count == 0 {
+		log.Printf("Error deleting user, count: %d, err: %s\n", count, err)
+		rw.WriteHeader(http.StatusInternalServerError)
+		rw.Write([]byte("Error deleting password"))
+		return
+	}
 
 	// Remove all events owned by that user
+	_, err = conn.DB.Exec(`DELETE FROM events WHERE owner_id = $1`, userID)
+	if err != nil {
+		log.Printf("Error deleting user's events: %s\n", err)
+	}
+
+	// Remove current token
+	_, err = conn.Cache.Do("DEL", sessionToken)
+	if err != nil {
+		log.Printf("Error deleting session token from cache: %s\n", err)
+	}
 
 	// Remove all existing tokens for that user
+	deleteAllTokensForUser(userID)
 
-	// Send back empty cookie to log them out
+	// Send back empty cookie
+	http.SetCookie(rw, &http.Cookie{
+		Name:   "session_token",
+		Value:  "",
+		MaxAge: 0,
+	})
+
+	log.Println("User deleted")
+	rw.WriteHeader(http.StatusOK)
+	rw.Write([]byte("User deleted"))
 }
 
 func generateCookie(userID string) (http.Cookie, error) {
 	sessionToken := uuid.NewV4().String()
 
-	_, err := conn.Cache.Do("SETEX", sessionToken, "300", userID)
+	_, err := conn.Cache.Do("SETEX", sessionToken, "3600", userID)
 	if err != nil {
 		return http.Cookie{}, err
 	}
@@ -355,10 +372,40 @@ func generateCookie(userID string) (http.Cookie, error) {
 	cookie := http.Cookie{
 		Name:   "session_token",
 		Value:  sessionToken,
-		MaxAge: 300,
+		MaxAge: 3600,
 	}
 
 	return cookie, nil
+}
+
+func deleteAllTokensForUser(userID int) {
+	keyData, err := conn.Cache.Do("KEYS", "*")
+	if err != nil {
+		log.Printf("Error getting all keys from cache: %s\n", err)
+	}
+
+	if keyData != nil {
+		for _, k := range keyData.([]interface{}) {
+			key := string([]byte(k.([]uint8)))
+
+			sessUserID, err := conn.Cache.Do("GET", key)
+			if err != nil {
+				log.Printf("Error getting session token %s from cache\n", key)
+				continue
+			}
+			if sessUserID == nil {
+				continue
+			}
+
+			if userID == int(sessUserID.([]uint8)[0]) {
+				_, err = conn.Cache.Do("DEL", key)
+				if err != nil {
+					log.Printf("Error deleting session token %s from cache: %s\n", key, err)
+					continue
+				}
+			}
+		}
+	}
 }
 
 /* func generateToken(userID int, userName string) string {

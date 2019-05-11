@@ -24,7 +24,12 @@ func createServer() {
 	http.Handle("/api/signup", m.MethodChecker(http.HandlerFunc(user.Create)))
 	http.Handle("/api/login", m.MethodChecker(http.HandlerFunc(user.Login)))
 	http.Handle("/api/logout", m.MethodChecker(http.HandlerFunc(user.Logout)))
+
+	m.Allowed = []string{"PUT"}
 	http.Handle("/api/changePassword", m.MethodChecker(mw.ValidateCookie(http.HandlerFunc(user.ChangePassword))))
+
+	m.Allowed = []string{"DELETE"}
+	http.Handle("/api/deleteAccount", m.MethodChecker(mw.ValidateCookie(http.HandlerFunc(user.Delete))))
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
