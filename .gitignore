@@ -1,4 +1,5 @@
 .DS_Store
+.vscode/
 frontend/.DS_Store
 *.exe
 calendar-server
