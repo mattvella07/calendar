@@ -76,7 +76,11 @@ func Create(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	currUserName := ""
-	err = conn.DB.QueryRow(`SELECT username FROM users WHERE username = $1`, username).Scan(&currUserName)
+	query := `SELECT username
+		FROM users
+		WHERE username = $1`
+
+	err = conn.DB.QueryRow(query, username).Scan(&currUserName)
 
 	switch {
 	case err == sql.ErrNoRows:
@@ -104,7 +108,12 @@ func Create(rw http.ResponseWriter, r *http.Request) {
 		}
 
 		userID := -1
-		err = conn.DB.QueryRow(`INSERT INTO users (username, password, "first_name", "last_name") VALUES ($1, $2, $3, $4) RETURNING id`, username, passwordHash, u.FirstName, u.LastName).Scan(&userID)
+		query = `INSERT INTO users
+			(username, password, "first_name", "last_name")
+			VALUES ($1, $2, $3, $4)
+			RETURNING id`
+
+		err = conn.DB.QueryRow(query, username, passwordHash, u.FirstName, u.LastName).Scan(&userID)
 		if err != nil {
 			log.Printf("Error creating user: %s\n", err)
 			rw.WriteHeader(http.StatusInternalServerError)
@@ -152,7 +161,12 @@ func Login(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	existingUser := User{}
-	err := conn.DB.QueryRow(`SELECT id, username, password FROM users WHERE username = $1 LIMIT 1`, username).Scan(&existingUser.UserID, &existingUser.Username, &existingUser.Password)
+	query := `SELECT id, username, password
+		FROM users
+		WHERE username = $1
+		LIMIT 1`
+
+	err := conn.DB.QueryRow(query, username).Scan(&existingUser.UserID, &existingUser.Username, &existingUser.Password)
 	if err != nil {
 		log.Printf("DB error: %s\n", err)
 		rw.WriteHeader(http.StatusUnauthorized)
@@ -226,7 +240,12 @@ func ChangePassword(rw http.ResponseWriter, r *http.Request) {
 
 	// Check if user exists in DB
 	existingUser := User{}
-	err = conn.DB.QueryRow(`SELECT password FROM users WHERE id = $1 LIMIT 1`, userID).Scan(&existingUser.Password)
+	query := `SELECT password
+		FROM users
+		WHERE id = $1
+		LIMIT 1`
+
+	err = conn.DB.QueryRow(query, userID).Scan(&existingUser.Password)
 	if err != nil {
 		log.Printf("DB error: %s\n", err)
 		rw.WriteHeader(http.StatusUnauthorized)
@@ -259,7 +278,11 @@ func ChangePassword(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := conn.DB.Exec(`UPDATE users SET password = $1 WHERE id = $2`, newPasswordHash, userID)
+	query = `UPDATE users
+		SET password = $1
+		WHERE id = $2`
+
+	res, err := conn.DB.Exec(query, newPasswordHash, userID)
 	if err != nil {
 		log.Printf("Error updating user's password: %s\n", err)
 		rw.WriteHeader(http.StatusInternalServerError)
@@ -319,7 +342,11 @@ func Delete(rw http.ResponseWriter, r *http.Request) {
 	sessionToken := r.Header.Get("sessionToken")
 
 	// Remove user from users table
-	res, err := conn.DB.Exec(`DELETE FROM users WHERE id = $1`, userID)
+	query := `DELETE
+		FROM users
+		WHERE id = $1`
+
+	res, err := conn.DB.Exec(query, userID)
 	if err != nil {
 		log.Printf("Error deleting user: %s\n", err)
 		rw.WriteHeader(http.StatusInternalServerError)
@@ -335,7 +362,11 @@ func Delete(rw http.ResponseWriter, r *http.Request) {
 	}
 
 	// Remove all events owned by that user
-	_, err = conn.DB.Exec(`DELETE FROM events WHERE owner_id = $1`, userID)
+	query = `DELETE
+		FROM events
+		WHERE owner_id = $1`
+
+	_, err = conn.DB.Exec(query, userID)
 	if err != nil {
 		log.Printf("Error deleting user's events: %s\n", err)
 	}

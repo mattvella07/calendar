@@ -24,12 +24,14 @@ func createServer() {
 	http.Handle("/api/signup", m.MethodChecker(http.HandlerFunc(user.Create)))
 	http.Handle("/api/login", m.MethodChecker(http.HandlerFunc(user.Login)))
 	http.Handle("/api/logout", m.MethodChecker(http.HandlerFunc(user.Logout)))
+	http.Handle("/api/createEvent", m.MethodChecker(mw.ValidateCookie(http.HandlerFunc(events.Create))))
 
 	m.Allowed = []string{"PUT"}
 	http.Handle("/api/changePassword", m.MethodChecker(mw.ValidateCookie(http.HandlerFunc(user.ChangePassword))))
 
 	m.Allowed = []string{"DELETE"}
 	http.Handle("/api/deleteAccount", m.MethodChecker(mw.ValidateCookie(http.HandlerFunc(user.Delete))))
+	http.Handle("/api/deleteEvent/", m.MethodChecker(mw.ValidateCookie(http.HandlerFunc(events.Delete))))
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }
