@@ -16,16 +16,20 @@ import (
 
 // Docs contains all info for endpoints
 type Docs struct {
-	Endpoints []Endpoint `json:"endpoints"`
+	UserEndpoints []Endpoint `json:"userEndpoints"`
+	EventEndpoints []Endpoint `json:"eventEndpoints"`
 }
 
 // Endpoint represents an API endpoint
 type Endpoint struct {
-	URL 				string `json:"url"`
 	Method 			string `json:"method"`
-	Params 			string `json:"params"`
-	ReturnVal 	string `json:"returnVal"`
+	URL 				string `json:"url"`
 	Description string `json:"description"`
+	Headers 		string `json:"headers"`
+	Body 				string `json:"body"`
+	URLParams 	string `json:"urlParams"`
+	QueryParams string `json:"queryParams"`
+	ReturnVal 	string `json:"returnVal"`
 }
 
 func createServer() {
