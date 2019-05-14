@@ -1,0 +1,33 @@
+{
+  "endpoints": [{
+      "url": "/api/isValidUser",
+      "method": "GET"
+    }, {
+      "url": "/api/getEvents",
+      "method": "GET"
+    }, {
+      "url": "/api/getEvent",
+      "method": "GET"
+    }, {
+      "url": "/api/signup",
+      "method": "POST"
+    }, {
+      "url": "/api/login",
+      "method": "POST"
+    }, {
+      "url": "/api/logout",
+      "method": "POST"
+    }, {
+      "url": "/api/createEvent",
+      "method": "POST"
+    }, {
+      "url": "/api/changePassword",
+      "method": "PUT"
+    }, {
+      "url": "/api/deleteAccount",
+      "method": "DELETE"
+    }, {
+      "url": "/api/deleteEvent",
+      "method": "DELETE"
+    }]
+}
