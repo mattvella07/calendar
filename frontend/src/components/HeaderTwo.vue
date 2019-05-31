@@ -12,7 +12,7 @@
       >
         <i class="small material-icons">chevron_right</i>
       </button>
-      <a v-on:click="goToToday" class="todayBtn btn btn-flat waves-effect waves-light blue accent-4"><strong>Today</strong></a>
+      <a v-on:click="goToToday" class="todayBtn btn btn-flat waves-effect waves-light"><strong>Today</strong></a>
 
       <h4>{{ title }}</h4>
     </div>
@@ -31,12 +31,7 @@
 </script>
 
 <style>
-.title {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: start;
-}
+
 .nextPrevBtn {
   color: black;
   border-radius: 100px;
@@ -49,13 +44,23 @@
   display: flex;
   justify-content: center;
 }
+.nextPrevBtn:focus {
+  background-color: white;
+}
 .nextPrevBtn:hover {
-  background-color: #82b1ff;
+  background-color: #e8eaf6;
 }
 .todayBtn {
-  margin-right: 10px;
+  background-color: #3949ab;
+  color: white;
+  margin-left: 5px;
+  margin-right: 15px;
+  width: 80px;
+  height: 40px;
+  border-radius: 4px;
+  border: none;
 }
 .todayBtn:hover {
-  background-color: white;
+  background-color: #1a237e;
 }
 </style>

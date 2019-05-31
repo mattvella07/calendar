@@ -187,34 +187,6 @@ td {
 .today {
   color: #3949ab;
 }
-.nextPrevBtn {
-  color: black;
-  border-radius: 100px;
-  width: 40px;
-  height: 40px;
-  background-color: white;
-  border: none;
-  margin-left: 2.5px;
-  margin-right: 2.5px;
-  display: flex;
-  justify-content: center;
-}
-.nextPrevBtn:hover {
-  background-color: #e8eaf6;
-}
-.todayBtn {
-  background-color: #3949ab;
-  color: white;
-  margin-left: 5px;
-  margin-right: 15px;
-  width: 80px;
-  height: 40px;
-  border-radius: 4px;
-  border: none;
-}
-.todayBtn:hover {
-  background-color: #1a237e;
-}
 .dayHdr {
   text-align: center;
 }
@@ -240,6 +212,4 @@ td {
 .dateBtn.today:hover {
     background-color: #1a237e;
 }
-
-
 </style>
