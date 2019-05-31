@@ -1,0 +1,39 @@
+<h1>Calendar API Docs</h1>
+
+<h4>Users</h4>
+<ul>
+  {{range .UserEndpoints}}
+    <li>{{.Method}} {{.URL}} - {{.Description}}</li>
+    {{if .Headers}}
+      <p>&nbsp;Headers: {{.Headers}}</p>
+    {{end}}
+    {{if .URLParams}}
+      <p>&nbsp;URL Parameters: {{.URLParams}}</p>
+    {{end}}
+    {{if .QueryParams}}
+      <p>&nbsp;Query Parameters: {{.QueryParams}}</p>
+    {{end}}
+    {{if .Body}}
+      <p>&nbsp;Body: {{.Body}}</p>
+    {{end}}
+  {{end}}
+</ul>
+
+<h4>Events</h4>
+<ul>
+  {{range .EventEndpoints}}
+    <li>{{.Method}} {{.URL}} - {{.Description}}</li>
+    {{if .Headers}}
+      <p>&nbsp;Headers: {{.Headers}}</p>
+    {{end}}
+    {{if .URLParams}}
+      <p>&nbsp;URL Parameters: {{.URLParams}}</p>
+    {{end}}
+    {{if .QueryParams}}
+      <p>&nbsp;Query Parameters: {{.QueryParams}}</p>
+    {{end}}
+    {{if .Body}}
+      <p>&nbsp;Body: {{.Body}}</p>
+    {{end}}
+  {{end}}
+</ul>

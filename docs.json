@@ -1,0 +1,52 @@
+{
+  "userEndpoints": [{
+    "url": "/api/signup",
+    "method": "POST",
+    "description": "Creates a new user",
+    "headers": "username, password",
+    "body": "firstName, lastName"
+  }, {
+    "url": "/api/login",
+    "method": "POST",
+    "description": "Logs the user in",
+    "headers": "username, password"
+  }, {
+    "url": "/api/logout",
+    "method": "POST",
+    "description": "Logs the user out"
+  }, {
+    "url": "/api/isValidUser",
+    "method": "GET",
+    "description": "Checks if the user is a valid user"
+  }, {
+    "url": "/api/changePassword",
+    "method": "PUT",
+    "description": "Changes the user's password",
+    "headers": "currentPassword, newPassword"
+  }, {
+    "url": "/api/deleteAccount",
+    "method": "DELETE",
+    "description": "Deletes the user's account"
+  }],
+  "eventEndpoints": [{
+    "url": "/api/createEvent",
+    "method": "POST",
+    "description": "Creates a new event",
+    "body": "title, start_time, end_time, location, notes"
+  }, {
+    "url": "/api/getEvents",
+    "method": "GET",
+    "description": "Returns all events for a specific user and date range",
+    "queryParams": "startDate, endDate"
+  }, {
+    "url": "/api/getEvent",
+    "method": "GET",
+    "description": "Returns an event by ID",
+    "urlParams": "eventId"
+  }, {
+    "url": "/api/deleteEvent",
+    "method": "DELETE",
+    "description": "Deletes an event by ID",
+    "urlParams": "eventId"
+  }]
+}

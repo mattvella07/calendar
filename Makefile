@@ -18,4 +18,4 @@ clean:
 	docker container stop calendar_db_1 || docker container rm calendar_db_1 || true
 	docker container stop calendar_cache_1 || docker container rm calendar_cache_1 || true
 
-.PHONY: build run backend
+.PHONY: build build-backend run clean
