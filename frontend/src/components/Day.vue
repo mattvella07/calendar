@@ -1,13 +1,19 @@
 <template>
   <div class="day">
     <div class="title">
-      <a v-on:click="prevDay" class="btn-floating btn-large waves-effect waves-light blue accent-4">
-        <i class="material-icons"><</i>
-      </a>
-      <a v-on:click="goToToday" class="btn waves-effect waves-light blue accent-4">Today</a>
-      <a v-on:click="nextDay" class="btn-floating btn-large waves-effect waves-light blue accent-4">
-        <i class="material-icons">></i>
-      </a>
+      <button
+        v-on:click="prevDay"
+        class="nextPrevBtn"
+      >
+      <i class="small material-icons">chevron_left</i>
+      </button>
+      <button
+        v-on:click="nextDay"
+        class="nextPrevBtn"
+      >
+        <i class="small material-icons">chevron_right</i>
+      </button>
+      <button v-on:click="goToToday" class="todayBtn">Today</button>
 
       <h4>{{ currDate }}</h4>
     </div>
@@ -113,6 +119,8 @@ a {
 }
 #calendar {
   width: 95%;
+  margin-top: 10px;
+  margin-left: 2.5px;
 }
 th,
 td {
@@ -133,5 +141,33 @@ td {
   position: absolute;
   top: 0;
   right: 0;
+}
+.nextPrevBtn {
+  color: black;
+  border-radius: 100px;
+  width: 40px;
+  height: 40px;
+  background-color: white;
+  border: none;
+  margin-left: 2.5px;
+  margin-right: 2.5px;
+  display: flex;
+  justify-content: center;
+}
+.nextPrevBtn:hover {
+  background-color: #e8eaf6;
+}
+.todayBtn {
+  background-color: #3949ab;
+  color: white;
+  margin-left: 5px;
+  margin-right: 15px;
+  width: 80px;
+  height: 40px;
+  border-radius: 4px;
+  border: none;
+}
+.todayBtn:hover {
+  background-color: #1a237e;
 }
 </style>

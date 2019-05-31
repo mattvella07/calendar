@@ -1,19 +1,19 @@
 <template>
   <div class="week">
     <div class="title">
-      <a
+      <button
         v-on:click="prevWeek"
-        class="btn-floating btn-large waves-effect waves-light blue accent-4"
+        class="nextPrevBtn"
       >
-        <i class="material-icons"><</i>
-      </a>
-      <a v-on:click="goToToday" class="btn waves-effect waves-light blue accent-4">Today</a>
-      <a
+      <i class="small material-icons">chevron_left</i>
+      </button>
+      <button
         v-on:click="nextWeek"
-        class="btn-floating btn-large waves-effect waves-light blue accent-4"
+        class="nextPrevBtn"
       >
-        <i class="material-icons">></i>
-      </a>
+        <i class="small material-icons">chevron_right</i>
+      </button>
+      <button v-on:click="goToToday" class="todayBtn">Today</button>
 
       <h4>{{ startDate }} - {{ endDate }}</h4>
     </div>
@@ -31,8 +31,11 @@
       <table id="calendar">
         <tr>
           <th v-for="(day, dayKey) in days" v-bind:key="dayKey">
-            <span v-bind:class="{ today: day.today }">{{ day.date }}</span>&nbsp;&nbsp;&nbsp;
-            <span v-bind:class="{ today: day.today }">{{ day.dow }}</span>
+            <div class="dayHdr">
+              <button class="dateBtn" v-bind:class="{ today: day.today }">{{ day.date }}</button>
+              <br/>
+              <button class="dayBtn" v-bind:class="{ today: day.today }">{{ day.dow.toUpperCase() }}</button>
+            </div>
           </th>
         </tr>
         <tr v-for="(time, timeKey) in timeSlots" v-bind:key="timeKey">
@@ -164,6 +167,8 @@ a {
 }
 #time {
   width: 5%;
+  margin-top: 22px;
+  margin-right: 2.5px;
 }
 #calendar {
   width: 95%;
@@ -189,6 +194,61 @@ td {
   right: 0;
 }
 .today {
-  color: red;
+  color: #3949ab;
 }
+.nextPrevBtn {
+  color: black;
+  border-radius: 100px;
+  width: 40px;
+  height: 40px;
+  background-color: white;
+  border: none;
+  margin-left: 2.5px;
+  margin-right: 2.5px;
+  display: flex;
+  justify-content: center;
+}
+.nextPrevBtn:hover {
+  background-color: #e8eaf6;
+}
+.todayBtn {
+  background-color: #3949ab;
+  color: white;
+  margin-left: 5px;
+  margin-right: 15px;
+  width: 80px;
+  height: 40px;
+  border-radius: 4px;
+  border: none;
+}
+.todayBtn:hover {
+  background-color: #1a237e;
+}
+.dayHdr {
+  text-align: center;
+}
+.dayHdr button {
+  background-color: white;
+  border:none;
+}
+.dateBtn {
+  height: 30px;
+  width: 30px;
+  border-radius: 50px;
+}
+.dateBtn:hover {
+  background-color: #e8eaf6;
+}
+.dateBtn.today {
+  background-color: #3949ab;
+  height: 30px;
+  width: 30px;
+  border-radius: 50px;
+  color: white;
+}
+.dateBtn.today:hover {
+    background-color: #1a237e;
+}
+
+
 </style>

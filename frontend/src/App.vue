@@ -2,7 +2,7 @@
   <div id="app">
     <div v-if="loggedIn">
       <nav>
-        <div class="nav-wrapper blue accent-4">
+        <div class="nav-wrapper indigo darken-2">
           <ul class="left hide-on-med-and-down">
             <li v-on:click="setView" v-bind:class="{active: currView == 'day'}">
               <a href="#">Day</a>
@@ -98,10 +98,11 @@ export default {
 
 <style>
 #app {
-  font-family: "Avenir", Helvetica, Arial, sans-serif;
+  font-family: 'Nunito', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
 }
+
 </style>

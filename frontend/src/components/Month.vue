@@ -1,36 +1,39 @@
 <template>
   <div class="hello">
     <div class="title">
-      <a
+      <button
         v-on:click="prevMonth"
-        class="btn-floating btn-large waves-effect waves-light blue accent-4"
+        class="nextPrevBtn"
       >
-        <i class="material-icons"><</i>
-      </a>
-      <a v-on:click="goToToday" class="btn waves-effect waves-light blue accent-4">Today</a>
-      <a
+      <i class="small material-icons">chevron_left</i>
+      </button>
+      <button
         v-on:click="nextMonth"
-        class="btn-floating btn-large waves-effect waves-light blue accent-4"
+        class="nextPrevBtn"
       >
-        <i class="material-icons">></i>
-      </a>
+        <i class="small material-icons">chevron_right</i>
+      </button>
+      <button v-on:click="goToToday" class="todayBtn">Today</button>
 
       <h4>{{ currMonthStr }} {{ currYear }}</h4>
+
     </div>
     <table>
       <tr>
         <th v-for="(d, dKey) in dow" v-bind:key="dKey">
-          <span>{{ d }}</span>
+          <span>{{ d.toUpperCase() }}</span>
         </th>
       </tr>
       <tr v-for="(week, weekKey) in weeks" v-bind:key="weekKey">
         <td v-for="(day, dayKey) in week" v-bind:key="dayKey">
-          <span v-if="day" v-bind:class="{ hasEvent: day.hasEvent, today: day.today }">{{ day.day }}</span>
+          <button v-if="day" v-bind:class="{ hasEvent: day.hasEvent, today: day.today }">{{ day.day }}</button>
         </td>
       </tr>
     </table>
   </div>
 </template>
+
+
 
 <script>
 import { formatDateForAPI } from "../utils";
@@ -194,6 +197,8 @@ export default {
 };
 </script>
 
+
+
 <style scoped>
 h3 {
   margin: 40px 0 0;
@@ -235,17 +240,60 @@ td {
   position: relative;
   height: 125px;
   width: 200px;
-  border: 1px solid lightgray;
+  border: 1px solid rgb(177, 177, 177);
 }
-td span {
+td button {
+  width: 30px;
+  height: 30px;
+  border-radius: 50px;
+  border: none;
   position: absolute;
-  left: 0;
-  top: 0;
+  left: 2.5px;
+  top: 2.5px;
+}
+td button:focus {
+  background-color:white;
+}
+td button:hover {
+  background-color:#e8eaf6;
 }
 .hasEvent {
   color: blue;
 }
-.today {
-  color: red;
+td .today {
+  background-color: #3949ab;
+  color: white;
 }
+td .today:hover {
+  background-color: #1a237e;
+}
+.nextPrevBtn {
+  color: black;
+  border-radius: 100px;
+  width: 40px;
+  height: 40px;
+  background-color: white;
+  border: none;
+  margin-left: 2.5px;
+  margin-right: 2.5px;
+  display: flex;
+  justify-content: center;
+}
+.nextPrevBtn:hover {
+  background-color: #e8eaf6;
+}
+.todayBtn {
+  background-color: #3949ab;
+  color: white;
+  margin-left: 5px;
+  margin-right: 15px;
+  width: 80px;
+  height: 40px;
+  border-radius: 4px;
+  border: none;
+}
+.todayBtn:hover {
+  background-color: #1a237e;
+}
+
 </style>
