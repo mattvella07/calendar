@@ -1,22 +1,6 @@
 <template>
   <div class="week">
-    <div class="title">
-      <button
-        v-on:click="prevWeek"
-        class="nextPrevBtn"
-      >
-      <i class="small material-icons">chevron_left</i>
-      </button>
-      <button
-        v-on:click="nextWeek"
-        class="nextPrevBtn"
-      >
-        <i class="small material-icons">chevron_right</i>
-      </button>
-      <button v-on:click="goToToday" class="todayBtn">Today</button>
-
-      <h4>{{ startDate }} - {{ endDate }}</h4>
-    </div>
+    <HeaderTwo v-bind:title="title" v-bind:previous="prevWeek" v-bind:next="nextWeek" v-bind:goToToday="goToToday"></HeaderTwo>
     <div id="fullCalendar">
       <table id="time">
         <tr>
@@ -50,6 +34,7 @@
 
 <script>
 import { formatDateForAPI, createTimeSlots } from "../utils";
+import HeaderTwo from "./HeaderTwo.vue";
 import axios from "axios";
 import {
   getDate,
@@ -66,6 +51,9 @@ import {
 
 export default {
   name: "Week",
+  components: {
+    HeaderTwo
+  },
   data: () => ({
     dow: [
       "Monday",
@@ -79,6 +67,7 @@ export default {
     timeSlots: [],
     startDate: new Date(),
     endDate: new Date(),
+    title: "",
     days: [],
     events: []
   }),
@@ -116,6 +105,8 @@ export default {
         endOfWeek(new Date(this.startDate), { weekStartsOn: 1 }),
         "MMM DD, YYYY"
       );
+
+      this.title = this.startDate + " - " + this.endDate;
 
       axios
         .get(

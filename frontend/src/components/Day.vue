@@ -1,22 +1,6 @@
 <template>
   <div class="day">
-    <div class="title">
-      <button
-        v-on:click="prevDay"
-        class="nextPrevBtn"
-      >
-      <i class="small material-icons">chevron_left</i>
-      </button>
-      <button
-        v-on:click="nextDay"
-        class="nextPrevBtn"
-      >
-        <i class="small material-icons">chevron_right</i>
-      </button>
-      <button v-on:click="goToToday" class="todayBtn">Today</button>
-
-      <h4>{{ currDate }}</h4>
-    </div>
+    <HeaderTwo v-bind:title="currDate" v-bind:previous="prevDay" v-bind:next="nextDay" v-bind:goToToday="goToToday"></HeaderTwo>
     <div id="fullCalendar">
       <table id="time">
         <tr v-for="(time, timeKey) in timeSlots" v-bind:key="timeKey">
@@ -38,11 +22,15 @@
 
 <script>
 import { formatDateForAPI, createTimeSlots } from "../utils";
+import HeaderTwo from "./HeaderTwo.vue";
 import axios from "axios";
 import { addDays, subDays, format } from "date-fns";
 
 export default {
   name: "Day",
+  components: {
+    HeaderTwo
+  },
   data: () => ({
     timeSlots: [],
     currDate: format(new Date(), "dddd, MMMM DD, YYYY"),

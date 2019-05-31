@@ -1,25 +1,33 @@
 <template>
     <div class="title">
       <button
-        v-on:click="prevMonth"
+        v-on:click="previous"
         class="nextPrevBtn"
       >
       <i class="small material-icons">chevron_left</i>
       </button>
       <button
-        v-on:click="nextMonth"
+        v-on:click="next"
         class="nextPrevBtn"
       >
         <i class="small material-icons">chevron_right</i>
       </button>
       <a v-on:click="goToToday" class="todayBtn btn btn-flat waves-effect waves-light blue accent-4"><strong>Today</strong></a>
 
-      <h4>{{ currMonthStr }} {{ currYear }}</h4>
+      <h4>{{ title }}</h4>
     </div>
 </template>
 
 <script>
-
+  export default {
+    name: "HeaderTwo",
+    props: {
+      title: String,
+      previous: Function,
+      next: Function,
+      goToToday: Function
+    }
+  }
 </script>
 
 <style>

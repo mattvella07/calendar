@@ -1,23 +1,6 @@
 <template>
   <div class="hello">
-    <div class="title">
-      <button
-        v-on:click="prevMonth"
-        class="nextPrevBtn"
-      >
-      <i class="small material-icons">chevron_left</i>
-      </button>
-      <button
-        v-on:click="nextMonth"
-        class="nextPrevBtn"
-      >
-        <i class="small material-icons">chevron_right</i>
-      </button>
-      <button v-on:click="goToToday" class="todayBtn">Today</button>
-
-      <h4>{{ currMonthStr }} {{ currYear }}</h4>
-
-    </div>
+    <HeaderTwo v-bind:title="title" v-bind:previous="prevMonth" v-bind:next="nextMonth" v-bind:goToToday="goToToday"></HeaderTwo>
     <table>
       <tr>
         <th v-for="(d, dKey) in dow" v-bind:key="dKey">
@@ -37,6 +20,7 @@
 
 <script>
 import { formatDateForAPI } from "../utils";
+import HeaderTwo from "./HeaderTwo.vue";
 import axios from "axios";
 import {
   getDay,
@@ -49,6 +33,9 @@ import {
 
 export default {
   name: "Month",
+  components: {
+    HeaderTwo
+  },
   props: {
     msg: String
   },
@@ -65,6 +52,7 @@ export default {
     currYear: getYear(new Date()),
     currMonth: getMonth(new Date()),
     currMonthStr: format(new Date(), "MMMM"),
+    title: "",
     weeks: [],
     events: []
   }),
@@ -155,6 +143,7 @@ export default {
         new Date(this.currYear, this.currMonth, 1),
         "MMMM"
       );
+      this.title = this.currMonthStr + " " + this.currYear;
 
       let numDaysInMonth = getDaysInMonth(
         new Date(this.currYear, this.currMonth)
