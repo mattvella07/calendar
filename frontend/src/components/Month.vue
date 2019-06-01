@@ -239,12 +239,13 @@ td button {
   position: absolute;
   left: 2.5px;
   top: 2.5px;
-}
-td button:focus {
   background-color:white;
 }
 td button:hover {
   background-color:#e8eaf6;
+}
+td button:focus {
+  background-color:white;
 }
 .hasEvent {
   color: #3949ab;
